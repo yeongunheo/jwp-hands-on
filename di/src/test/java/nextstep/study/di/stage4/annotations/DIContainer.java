@@ -9,16 +9,23 @@ class DIContainer {
 
     private final Set<Object> beans;
 
-    public DIContainer(final Set<Class<?>> classes) {
-        this.beans = Set.of();
+    private DIContainer(final Set<Object> beans) {
+        this.beans = beans;
     }
 
+    // ClassPathScanner 클래스를 활용해보자.
     public static DIContainer createContainerForPackage(final String rootPackageName) {
-        return null;
+        Set<Object> beans = ClassPathScanner.getAllClassesInPackage(rootPackageName);
+        return new DIContainer(beans);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getBean(final Class<T> aClass) {
+    public <T> T getBean(final Class<T> clazz) {
+        for (Object bean : beans) {
+            if (clazz.isInstance(bean)) {
+                return (T) bean;
+            }
+        }
         return null;
     }
 }
