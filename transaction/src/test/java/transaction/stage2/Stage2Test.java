@@ -1,14 +1,14 @@
 package transaction.stage2;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 트랜잭션 전파(Transaction Propagation)란?
@@ -36,7 +36,7 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? 1개
      * 왜 그런 결과가 나왔을까?
      */
     @Test
@@ -45,12 +45,12 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
+                .hasSize(1)
                 .containsExactly("");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * 생성된 트랜잭션이 몇 개인가? 2개
      * 왜 그런 결과가 나왔을까?
      */
     @Test
@@ -59,7 +59,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
+                .hasSize(2)
                 .containsExactly("");
     }
 
@@ -69,12 +69,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -100,6 +100,7 @@ class Stage2Test {
     void testMandatory() {
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
+        // Kandatory 전파 속성은 부모 트랜잭션이 없다면 IllegalTransactionStateException 예외를 발생시킨다.
         log.info("transactions : {}", actual);
         assertThat(actual)
                 .hasSize(0)
@@ -107,9 +108,9 @@ class Stage2Test {
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 2개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 1개
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
@@ -129,6 +130,7 @@ class Stage2Test {
      */
     @Test
     void testNested() {
+        // JPA에서는 중첩 트랜잭션이 동작하지 않는다.
         final var actual = firstUserService.saveFirstTransactionWithNested();
 
         log.info("transactions : {}", actual);
